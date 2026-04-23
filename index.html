@@ -2,10 +2,9 @@
 <html lang="tr">
 <head>
     <link rel="icon" type="image/png" href="favicon.png">
-    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Saha Takip v4.5 - Full Güvenli</title>
+    <title>tale-BIM</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -14,54 +13,20 @@
     <style>
         .hidden { display: none; }
         .tab-active { border-bottom: 3px solid #2563eb; color: #2563eb; font-weight: bold; }
-        
-        .img-preview { 
-            width: 100%; 
-            height: 100px; 
-            object-fit: cover; 
-            border-radius: 12px; 
-            cursor: pointer; 
-            border: 1px solid #e2e8f0;
-            transition: transform 0.2s;
-        }
+        .img-preview { width: 100%; height: 100px; object-fit: cover; border-radius: 12px; cursor: pointer; border: 1px solid #e2e8f0; transition: transform 0.2s; }
         .img-preview:hover { transform: scale(1.03); border-color: #2563eb; }
-
-        /* Resim Büyütme (Lightbox) Modalı */
-        #imgModal {
-            display: none;
-            position: fixed;
-            z-index: 9999;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.9);
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-        }
-        #modalImg {
-            max-width: 90%;
-            max-height: 80%;
-            border-radius: 8px;
-            box-shadow: 0 0 20px rgba(255,255,255,0.3);
-        }
-        .close-modal {
-            position: absolute;
-            top: 20px;
-            right: 30px;
-            color: white;
-            font-size: 50px;
-            font-weight: bold;
-            cursor: pointer;
-        }
+        #imgModal { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); align-items: center; justify-content: center; flex-direction: column; }
+        #modalImg { max-width: 90%; max-height: 80%; border-radius: 8px; box-shadow: 0 0 20px rgba(255,255,255,0.3); }
+        .close-modal { position: absolute; top: 20px; right: 30px; color: white; font-size: 50px; font-weight: bold; cursor: pointer; }
+        .edit-input { width: 100%; padding: 4px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 11px; margin-top: 2px; outline: none; }
+        .edit-input:focus { border-color: #3b82f6; ring: 1px solid #3b82f6; }
     </style>
 </head>
 <body class="bg-slate-50 font-sans text-sm">
 
     <div id="loginPage" class="min-h-screen flex items-center justify-center p-4">
         <div class="max-w-sm w-full bg-white rounded-2xl shadow-xl p-6 border-t-4 border-blue-600">
-            <h2 class="text-2xl font-black text-center mb-6 uppercase tracking-tighter text-slate-800">Sistem Girişi</h2>
+            <h2 class="text-2xl font-black text-center mb-6 uppercase tracking-tighter">Sistem Girişi</h2>
             <form id="loginForm" class="space-y-4">
                 <input type="text" id="fullName" placeholder="Ad Soyad" required class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
                 <select id="role" class="w-full p-3 border rounded-xl outline-none bg-white">
@@ -76,17 +41,15 @@
     <div id="magazaPage" class="hidden min-h-screen p-4 max-w-lg mx-auto">
         <div class="bg-white rounded-2xl shadow-lg p-6 space-y-4">
             <div class="flex justify-between border-b pb-2">
-                <h2 class="font-bold uppercase text-slate-700 text-[10px]" id="msTitle">Yetkili Paneli</h2>
+                <h2 class="font-bold uppercase text-slate-700 text-[10px]" id="msTitle">Yükleniyor...</h2>
                 <button onclick="location.reload()" class="text-red-500 text-xs font-bold underline">ÇIKIŞ</button>
             </div>
-            
             <div class="grid grid-cols-2 gap-2">
                 <input type="file" id="file1" class="hidden" onchange="uploadImage(1)">
                 <button onclick="document.getElementById('file1').click()" id="btnFile1" class="py-4 bg-red-500 text-white rounded-xl text-[10px] font-black uppercase">FOTO 1 YÜKLE</button>
                 <input type="file" id="file2" class="hidden" onchange="uploadImage(2)">
                 <button onclick="document.getElementById('file2').click()" id="btnFile2" class="py-4 bg-red-500 text-white rounded-xl text-[10px] font-black uppercase">FOTO 2 YÜKLE</button>
             </div>
-
             <div class="space-y-3 pt-2">
                 <input type="text" id="uKodAd" placeholder="Ürün Kod ve Adı" class="w-full p-3 border rounded-xl bg-slate-50 outline-none">
                 <div class="flex gap-2">
@@ -95,7 +58,7 @@
                     <input type="number" id="uAdet" placeholder="Adet" class="w-1/3 p-3 border rounded-xl bg-slate-50 outline-none font-bold text-blue-600">
                 </div>
                 <input type="text" id="uUretici" placeholder="Üretici Firma" class="w-full p-3 border rounded-xl bg-slate-50 outline-none">
-                <textarea id="uProblem" placeholder="Hata detayı nedir?" class="w-full p-3 border rounded-xl bg-slate-50 h-20 outline-none"></textarea>
+                <textarea id="uProblem" placeholder="Hata detayı..." class="w-full p-3 border rounded-xl bg-slate-50 h-20 outline-none"></textarea>
             </div>
             <button id="btnGonder" disabled onclick="saveToFirebase()" class="w-full bg-slate-300 text-white p-4 rounded-xl font-black uppercase shadow-lg">BS Onayına Gönder</button>
         </div>
@@ -108,17 +71,15 @@
             <button onclick="switchTab('ayarlar')" id="tabAyarlar" class="flex-1 p-4 text-[10px] uppercase text-blue-600 font-bold">⚙️ Ayarlar</button>
             <button onclick="location.reload()" class="p-4 text-red-500 font-bold text-[10px]">ÇIKIŞ</button>
         </div>
-
         <div class="p-4 max-w-2xl mx-auto">
             <div id="onaySection" class="space-y-4"></div>
             <div id="arsivSection" class="hidden space-y-4"></div>
-            
             <div id="ayarlarSection" class="hidden bg-white p-6 rounded-2xl border space-y-4 shadow-sm">
-                <h3 class="font-black border-b pb-2">BS Mail Ayarları</h3>
-                <input type="email" id="bsEmail" placeholder="Şirket Mail Adresiniz" class="w-full p-3 border rounded-xl outline-none">
-                <input type="text" id="bsServiceId" placeholder="EmailJS Service ID" class="w-full p-3 border rounded-xl text-xs outline-none">
-                <input type="text" id="bsTemplateId" placeholder="EmailJS Template ID" class="w-full p-3 border rounded-xl text-xs outline-none">
-                <input type="text" id="bsPublicKey" placeholder="EmailJS Public Key" class="w-full p-3 border rounded-xl text-xs outline-none">
+                <h3 class="font-black border-b pb-2 text-[11px]">BS Mail Ayarları</h3>
+                <input type="email" id="bsEmail" placeholder="Mail Adresiniz" class="w-full p-3 border rounded-xl outline-none">
+                <input type="text" id="bsServiceId" placeholder="Service ID" class="w-full p-3 border rounded-xl text-xs outline-none">
+                <input type="text" id="bsTemplateId" placeholder="Template ID" class="w-full p-3 border rounded-xl text-xs outline-none">
+                <input type="text" id="bsPublicKey" placeholder="Public Key" class="w-full p-3 border rounded-xl text-xs outline-none">
                 <button onclick="saveSettings()" class="w-full bg-blue-600 text-white p-3 rounded-xl font-bold uppercase shadow-lg">Ayarları Kaydet</button>
             </div>
         </div>
@@ -127,11 +88,9 @@
     <div id="imgModal" onclick="this.style.display='none'">
         <span class="close-modal">&times;</span>
         <img id="modalImg" src="">
-        <p class="text-white mt-4 text-[10px] font-bold uppercase">Kapatmak için dokunun</p>
     </div>
 
     <script>
-        // --- FIREBASE VE GENEL AYARLAR ---
         const firebaseConfig = {
             apiKey: "AIzaSyArSP36nTu0RaAECH1GvPCjg3SaLA3Hg50",
             authDomain: "mail-35b9d.firebaseapp.com",
@@ -141,7 +100,6 @@
             appId: "1:522534406053:web:542774241892c780918a4c",
             measurementId: "G-3LR972L5Z6"
         };
-        
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const storage = firebase.storage();
@@ -149,7 +107,6 @@
         let user = {};
         let uploadedUrls = {1: null, 2: null};
 
-        // GİRİŞ FONKSİYONU
         document.getElementById('loginForm').onsubmit = (e) => {
             e.preventDefault();
             const selectedRole = document.getElementById('role').value;
@@ -157,10 +114,7 @@
 
             if (selectedRole === 'BS') {
                 const pass = prompt("BS Yetkili Şifresini Girin:");
-                if (pass !== "9553") {
-                    alert("Hatalı şifre! Yetkiniz yok.");
-                    return;
-                }
+                if (pass !== "9553") { alert("Hatalı şifre!"); return; }
             }
 
             user = { name: fullName, role: selectedRole };
@@ -175,26 +129,24 @@
             }
         };
 
-        // GÖRSEL YÜKLEME
         async function uploadImage(id) {
             const file = document.getElementById(`file${id}`).files[0];
             const btn = document.getElementById(`btnFile${id}`);
-            btn.innerText = "YÜKLENİYOR...";
+            btn.innerText = "Yükleniyor...";
             try {
                 const ref = storage.ref(`images/${Date.now()}_${file.name}`);
                 await ref.put(file);
                 const url = await ref.getDownloadURL();
                 uploadedUrls[id] = url;
-                btn.innerText = "HAZIR ✅";
-                btn.className = "py-4 bg-green-600 text-white rounded-xl text-[10px] font-black";
+                btn.innerText = "Hazır ✅";
+                btn.className = "py-4 bg-green-600 text-white rounded-xl text-[10px] font-black uppercase";
                 if(uploadedUrls[1] && uploadedUrls[2]) {
                     document.getElementById('btnGonder').disabled = false;
                     document.getElementById('btnGonder').classList.replace('bg-slate-300', 'bg-blue-600');
                 }
-            } catch (error) { alert("Yükleme hatası!"); btn.innerText = "HATA!"; }
+            } catch (error) { alert("Hata!"); btn.innerText = "HATA!"; }
         }
 
-        // VERİ KAYDETME
         async function saveToFirebase() {
             try {
                 await db.collection("bildirimler").add({
@@ -210,16 +162,23 @@
                     durum: "bekliyor",
                     tarih: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                alert("Başarıyla Gönderildi!");
+                alert("BS Onayına Gönderildi!");
                 location.reload();
-            } catch (error) { alert("Kaydedilemedi!"); }
+            } catch (error) { alert("Hata!"); }
         }
 
-        // BS PANELİ DİNLEME VE RENDER
+        async function deleteRecord(id) {
+            if(confirm("Bu talebi tamamen silmek istediğinizden emin misiniz?")) {
+                try {
+                    await db.collection("bildirimler").doc(id).delete();
+                    alert("Kayıt silindi.");
+                } catch (err) { alert("Silme hatası!"); }
+            }
+        }
+
         function openModal(url) {
-            const modal = document.getElementById('imgModal');
             document.getElementById('modalImg').src = url;
-            modal.style.display = "flex";
+            document.getElementById('imgModal').style.display = "flex";
         }
 
         function listenToUpdates() {
@@ -233,51 +192,92 @@
             const onayList = docs.filter(d => d.durum === "bekliyor");
             const arsivList = docs.filter(d => d.durum === "onaylandi");
 
+            // ONAY BEKLEYENLER KISMI (SİL BUTONU EKLENDİ)
             document.getElementById('onaySection').innerHTML = onayList.map(item => `
-                <div class="bg-white p-5 rounded-2xl border shadow-sm space-y-4">
-                    <div class="text-blue-600 font-bold uppercase text-xs">${item.kodAd}</div>
+                <div class="bg-white p-5 rounded-2xl border shadow-sm space-y-3 relative">
+                    <div class="text-blue-600 font-bold uppercase text-[10px]">Mağaza: ${item.gonderen}</div>
+                    <div class="space-y-1">
+                        <label class="text-[9px] font-bold text-slate-400 uppercase">Ürün Adı / Kod</label>
+                        <input type="text" value="${item.kodAd}" id="edit-kodAd-${item.id}" class="edit-input font-bold text-slate-700">
+                    </div>
                     <div class="grid grid-cols-2 gap-2">
                         <img src="${item.img1}" class="img-preview" onclick="openModal('${item.img1}')">
                         <img src="${item.img2}" class="img-preview" onclick="openModal('${item.img2}')">
                     </div>
-                    <div class="text-[11px] grid grid-cols-2 text-slate-500 border-t pt-2">
-                        <span><b>Adet:</b> ${item.adet}</span><span><b>SKT:</b> ${item.skt}</span>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div>
+                            <label class="text-[9px] font-bold text-slate-400 uppercase">Adet</label>
+                            <input type="number" value="${item.adet}" id="edit-adet-${item.id}" class="edit-input font-bold text-blue-600">
+                        </div>
+                        <div>
+                            <label class="text-[9px] font-bold text-slate-400 uppercase">SKT</label>
+                            <input type="text" value="${item.skt}" id="edit-skt-${item.id}" class="edit-input">
+                        </div>
+                        <div>
+                            <label class="text-[9px] font-bold text-slate-400 uppercase">PNO</label>
+                            <input type="text" value="${item.pno}" id="edit-pno-${item.id}" class="edit-input">
+                        </div>
                     </div>
-                    <div class="bg-blue-50 p-3 text-[10px] rounded-lg italic"><b>Sorun:</b> ${item.problem}</div>
-                    <button onclick="approveAndSend('${item.id}')" class="w-full bg-green-600 text-white py-4 rounded-xl font-black text-[10px] uppercase">ONAYLA VE MAİL AT</button>
+                    <div>
+                        <label class="text-[9px] font-bold text-slate-400 uppercase">Sorun Detayı</label>
+                        <textarea id="edit-problem-${item.id}" class="edit-input h-12">${item.problem}</textarea>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="updateAndSend('${item.id}')" class="flex-[4] bg-green-600 text-white py-4 rounded-xl font-black text-[10px] uppercase shadow-lg">Güncelle ve Mail At</button>
+                        <button onclick="deleteRecord('${item.id}')" class="flex-1 bg-red-100 text-red-600 py-4 rounded-xl font-black text-[16px] border border-red-200 shadow-sm flex items-center justify-center">🗑️</button>
+                    </div>
                 </div>
             `).join('');
 
+            // ARŞİV KISMI (SAĞ ALTTA İSİM EKLENDİ)
             document.getElementById('arsivSection').innerHTML = arsivList.map(item => `
-                <div class="bg-white p-3 rounded-xl border opacity-80 flex items-center gap-3">
-                    <img src="${item.img1}" class="w-10 h-10 rounded object-cover border" onclick="openModal('${item.img1}')">
-                    <div class="flex-1 text-[10px] font-bold uppercase">${item.kodAd}</div>
-                    <div class="text-[9px] font-bold text-blue-500 italic">MS: ${item.gonderen}</div>
+                <div class="bg-white p-3 rounded-xl border opacity-90 flex items-center gap-3 relative overflow-hidden shadow-sm">
+                    <img src="${item.img1}" class="w-12 h-12 rounded object-cover border shrink-0" onclick="openModal('${item.img1}')">
+                    <div class="flex-1 min-w-0 pr-10">
+                        <div class="text-[10px] font-black uppercase text-slate-700 truncate">${item.kodAd}</div>
+                        <div class="text-[9px] text-slate-400">${item.adet} Adet - SKT: ${item.skt}</div>
+                    </div>
+                    <div class="text-[9px] text-blue-500 font-bold shrink-0">OK ✅</div>
+                    <div class="absolute bottom-1 right-2 text-[8px] text-slate-400 font-bold uppercase italic tracking-tighter">
+                        Açan: ${item.gonderen || 'Bilinmiyor'}
+                    </div>
                 </div>
             `).join('');
         }
 
-        // MAİL GÖNDERİMİ
-        async function approveAndSend(docId) {
+        async function updateAndSend(docId) {
             const settings = JSON.parse(localStorage.getItem('bs_settings') || "{}");
-            if(!settings.sid) return alert("Lütfen önce mail ayarlarını yapın!");
-            const doc = await db.collection("bildirimler").doc(docId).get();
-            const item = doc.data();
-            if(confirm("Bu bildirim merkeze gönderilsin mi?")) {
+            if(!settings.sid) return alert("Lütfen önce ayarları yapın!");
+
+            const updatedData = {
+                kodAd: document.getElementById(`edit-kodAd-${docId}`).value,
+                adet: document.getElementById(`edit-adet-${docId}`).value,
+                skt: document.getElementById(`edit-skt-${docId}`).value,
+                pno: document.getElementById(`edit-pno-${docId}`).value,
+                problem: document.getElementById(`edit-problem-${docId}`).value
+            };
+
+            if(confirm("Bilgiler güncellenerek mail gönderilsin mi?")) {
                 try {
+                    const doc = await db.collection("bildirimler").doc(docId).get();
+                    const fullItem = { ...doc.data(), ...updatedData };
+
                     emailjs.init(settings.pk);
                     await emailjs.send(settings.sid, settings.tid, {
-                        bs_mail: settings.email, urun_adi: item.kodAd, adet: item.adet,
-                        problem: item.problem, uretici: item.uretici, skt: item.skt,
-                        pno: item.pno, img1: item.img1, img2: item.img2
+                        bs_mail: settings.email, urun_adi: fullItem.kodAd, adet: fullItem.adet,
+                        problem: fullItem.problem, uretici: fullItem.uretici, skt: fullItem.skt,
+                        pno: fullItem.pno, img1: fullItem.img1, img2: fullItem.img2
                     });
-                    await db.collection("bildirimler").doc(docId).update({ durum: "onaylandi" });
-                    alert("Onaylandı ve Mail Gönderildi!");
-                } catch (err) { alert("Hata oluştu! Ayarları kontrol edin."); }
+
+                    await db.collection("bildirimler").doc(docId).update({
+                        ...updatedData,
+                        durum: "onaylandi"
+                    });
+                    alert("Güncellendi ve Gönderildi!");
+                } catch (err) { alert("Hata! Ayarları kontrol edin."); }
             }
         }
 
-        // AYARLAR YÖNETİMİ
         function saveSettings() {
             const s = { 
                 email: document.getElementById('bsEmail').value, sid: document.getElementById('bsServiceId').value,
