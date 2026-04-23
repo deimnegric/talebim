@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <link rel="icon" type="image/png" href="favicon.png">
+    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saha Takip v4.5 - Full Güvenli</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <style>
+        .hidden { display: none; }
+        .tab-active { border-bottom: 3px solid #2563eb; color: #2563eb; font-weight: bold; }
+        
+        .img-preview { 
+            width: 100%; 
+            height: 100px; 
+            object-fit: cover; 
+            border-radius: 12px; 
+            cursor: pointer; 
+            border: 1px solid #e2e8f0;
+            transition: transform 0.2s;
+        }
+        .img-preview:hover { transform: scale(1.03); border-color: #2563eb; }
+
+        /* Resim Büyütme (Lightbox) Modalı */
+        #imgModal {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.9);
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        #modalImg {
+            max-width: 90%;
+            max-height: 80%;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(255,255,255,0.3);
+        }
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: white;
+            font-size: 50px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans text-sm">
+
+    <div id="loginPage" class="min-h-screen flex items-center justify-center p-4">
+        <div class="max-w-sm w-full bg-white rounded-2xl shadow-xl p-6 border-t-4 border-blue-600">
+            <h2 class="text-2xl font-black text-center mb-6 uppercase tracking-tighter text-slate-800">Sistem Girişi</h2>
+            <form id="loginForm" class="space-y-4">
+                <input type="text" id="fullName" placeholder="Ad Soyad" required class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+                <select id="role" class="w-full p-3 border rounded-xl outline-none bg-white">
+                    <option value="MS">Mağaza Sorumlusu / Yardımcısı (MS, MSY, GT)</option>
+                    <option value="BS">Bölge Sorumlusu (BS)</option>
+                </select>
+                <button type="submit" class="w-full bg-blue-600 text-white p-4 rounded-xl font-bold uppercase hover:bg-blue-700 transition-all shadow-lg">Giriş Yap</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="magazaPage" class="hidden min-h-screen p-4 max-w-lg mx-auto">
+        <div class="bg-white rounded-2xl shadow-lg p-6 space-y-4">
+            <div class="flex justify-between border-b pb-2">
+                <h2 class="font-bold uppercase text-slate-700 text-[10px]" id="msTitle">Yetkili Paneli</h2>
+                <button onclick="location.reload()" class="text-red-500 text-xs font-bold underline">ÇIKIŞ</button>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-2">
+                <input type="file" id="file1" class="hidden" onchange="uploadImage(1)">
+                <button onclick="document.getElementById('file1').click()" id="btnFile1" class="py-4 bg-red-500 text-white rounded-xl text-[10px] font-black uppercase">FOTO 1 YÜKLE</button>
+                <input type="file" id="file2" class="hidden" onchange="uploadImage(2)">
+                <button onclick="document.getElementById('file2').click()" id="btnFile2" class="py-4 bg-red-500 text-white rounded-xl text-[10px] font-black uppercase">FOTO 2 YÜKLE</button>
+            </div>
+
+            <div class="space-y-3 pt-2">
+                <input type="text" id="uKodAd" placeholder="Ürün Kod ve Adı" class="w-full p-3 border rounded-xl bg-slate-50 outline-none">
+                <div class="flex gap-2">
+                    <input type="text" id="uSkt" placeholder="SKT" class="w-1/3 p-3 border rounded-xl bg-slate-50 outline-none">
+                    <input type="text" id="uPno" placeholder="PNO" class="w-1/3 p-3 border rounded-xl bg-slate-50 outline-none">
+                    <input type="number" id="uAdet" placeholder="Adet" class="w-1/3 p-3 border rounded-xl bg-slate-50 outline-none font-bold text-blue-600">
+                </div>
+                <input type="text" id="uUretici" placeholder="Üretici Firma" class="w-full p-3 border rounded-xl bg-slate-50 outline-none">
+                <textarea id="uProblem" placeholder="Hata detayı nedir?" class="w-full p-3 border rounded-xl bg-slate-50 h-20 outline-none"></textarea>
+            </div>
+            <button id="btnGonder" disabled onclick="saveToFirebase()" class="w-full bg-slate-300 text-white p-4 rounded-xl font-black uppercase shadow-lg">BS Onayına Gönder</button>
+        </div>
+    </div>
+
+    <div id="bsPage" class="hidden min-h-screen">
+        <div class="sticky top-0 bg-white shadow-md z-10 flex max-w-2xl mx-auto border-b">
+            <button onclick="switchTab('onay')" id="tabOnay" class="flex-1 p-4 text-[10px] uppercase tab-active">Onay Bekleyenler</button>
+            <button onclick="switchTab('arsiv')" id="tabArsiv" class="flex-1 p-4 text-[10px] uppercase text-slate-400">Arşiv</button>
+            <button onclick="switchTab('ayarlar')" id="tabAyarlar" class="flex-1 p-4 text-[10px] uppercase text-blue-600 font-bold">⚙️ Ayarlar</button>
+            <button onclick="location.reload()" class="p-4 text-red-500 font-bold text-[10px]">ÇIKIŞ</button>
+        </div>
+
+        <div class="p-4 max-w-2xl mx-auto">
+            <div id="onaySection" class="space-y-4"></div>
+            <div id="arsivSection" class="hidden space-y-4"></div>
+            
+            <div id="ayarlarSection" class="hidden bg-white p-6 rounded-2xl border space-y-4 shadow-sm">
+                <h3 class="font-black border-b pb-2">BS Mail Ayarları</h3>
+                <input type="email" id="bsEmail" placeholder="Şirket Mail Adresiniz" class="w-full p-3 border rounded-xl outline-none">
+                <input type="text" id="bsServiceId" placeholder="EmailJS Service ID" class="w-full p-3 border rounded-xl text-xs outline-none">
+                <input type="text" id="bsTemplateId" placeholder="EmailJS Template ID" class="w-full p-3 border rounded-xl text-xs outline-none">
+                <input type="text" id="bsPublicKey" placeholder="EmailJS Public Key" class="w-full p-3 border rounded-xl text-xs outline-none">
+                <button onclick="saveSettings()" class="w-full bg-blue-600 text-white p-3 rounded-xl font-bold uppercase shadow-lg">Ayarları Kaydet</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="imgModal" onclick="this.style.display='none'">
+        <span class="close-modal">&times;</span>
+        <img id="modalImg" src="">
+        <p class="text-white mt-4 text-[10px] font-bold uppercase">Kapatmak için dokunun</p>
+    </div>
+
+    <script>
+        // --- FIREBASE VE GENEL AYARLAR ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyArSP36nTu0RaAECH1GvPCjg3SaLA3Hg50",
+            authDomain: "mail-35b9d.firebaseapp.com",
+            projectId: "mail-35b9d",
+            storageBucket: "mail-35b9d.firebasestorage.app",
+            messagingSenderId: "522534406053",
+            appId: "1:522534406053:web:542774241892c780918a4c",
+            measurementId: "G-3LR972L5Z6"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const storage = firebase.storage();
+
+        let user = {};
+        let uploadedUrls = {1: null, 2: null};
+
+        // GİRİŞ FONKSİYONU
+        document.getElementById('loginForm').onsubmit = (e) => {
+            e.preventDefault();
+            const selectedRole = document.getElementById('role').value;
+            const fullName = document.getElementById('fullName').value;
+
+            if (selectedRole === 'BS') {
+                const pass = prompt("BS Yetkili Şifresini Girin:");
+                if (pass !== "9553") {
+                    alert("Hatalı şifre! Yetkiniz yok.");
+                    return;
+                }
+            }
+
+            user = { name: fullName, role: selectedRole };
+            document.getElementById('loginPage').classList.add('hidden');
+            if(user.role === 'MS') {
+                document.getElementById('magazaPage').classList.remove('hidden');
+                document.getElementById('msTitle').innerText = `YETKİLİ: ${user.name} (MS, MSY, GT)`;
+            } else {
+                document.getElementById('bsPage').classList.remove('hidden');
+                loadSettings();
+                listenToUpdates();
+            }
+        };
+
+        // GÖRSEL YÜKLEME
+        async function uploadImage(id) {
+            const file = document.getElementById(`file${id}`).files[0];
+            const btn = document.getElementById(`btnFile${id}`);
+            btn.innerText = "YÜKLENİYOR...";
+            try {
+                const ref = storage.ref(`images/${Date.now()}_${file.name}`);
+                await ref.put(file);
+                const url = await ref.getDownloadURL();
+                uploadedUrls[id] = url;
+                btn.innerText = "HAZIR ✅";
+                btn.className = "py-4 bg-green-600 text-white rounded-xl text-[10px] font-black";
+                if(uploadedUrls[1] && uploadedUrls[2]) {
+                    document.getElementById('btnGonder').disabled = false;
+                    document.getElementById('btnGonder').classList.replace('bg-slate-300', 'bg-blue-600');
+                }
+            } catch (error) { alert("Yükleme hatası!"); btn.innerText = "HATA!"; }
+        }
+
+        // VERİ KAYDETME
+        async function saveToFirebase() {
+            try {
+                await db.collection("bildirimler").add({
+                    kodAd: document.getElementById('uKodAd').value,
+                    skt: document.getElementById('uSkt').value,
+                    pno: document.getElementById('uPno').value,
+                    uretici: document.getElementById('uUretici').value,
+                    adet: document.getElementById('uAdet').value,
+                    problem: document.getElementById('uProblem').value,
+                    gonderen: user.name,
+                    img1: uploadedUrls[1],
+                    img2: uploadedUrls[2],
+                    durum: "bekliyor",
+                    tarih: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                alert("Başarıyla Gönderildi!");
+                location.reload();
+            } catch (error) { alert("Kaydedilemedi!"); }
+        }
+
+        // BS PANELİ DİNLEME VE RENDER
+        function openModal(url) {
+            const modal = document.getElementById('imgModal');
+            document.getElementById('modalImg').src = url;
+            modal.style.display = "flex";
+        }
+
+        function listenToUpdates() {
+            db.collection("bildirimler").orderBy("tarih", "desc").onSnapshot(snapshot => {
+                const docs = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+                renderLists(docs);
+            });
+        }
+
+        function renderLists(docs) {
+            const onayList = docs.filter(d => d.durum === "bekliyor");
+            const arsivList = docs.filter(d => d.durum === "onaylandi");
+
+            document.getElementById('onaySection').innerHTML = onayList.map(item => `
+                <div class="bg-white p-5 rounded-2xl border shadow-sm space-y-4">
+                    <div class="text-blue-600 font-bold uppercase text-xs">${item.kodAd}</div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <img src="${item.img1}" class="img-preview" onclick="openModal('${item.img1}')">
+                        <img src="${item.img2}" class="img-preview" onclick="openModal('${item.img2}')">
+                    </div>
+                    <div class="text-[11px] grid grid-cols-2 text-slate-500 border-t pt-2">
+                        <span><b>Adet:</b> ${item.adet}</span><span><b>SKT:</b> ${item.skt}</span>
+                    </div>
+                    <div class="bg-blue-50 p-3 text-[10px] rounded-lg italic"><b>Sorun:</b> ${item.problem}</div>
+                    <button onclick="approveAndSend('${item.id}')" class="w-full bg-green-600 text-white py-4 rounded-xl font-black text-[10px] uppercase">ONAYLA VE MAİL AT</button>
+                </div>
+            `).join('');
+
+            document.getElementById('arsivSection').innerHTML = arsivList.map(item => `
+                <div class="bg-white p-3 rounded-xl border opacity-80 flex items-center gap-3">
+                    <img src="${item.img1}" class="w-10 h-10 rounded object-cover border" onclick="openModal('${item.img1}')">
+                    <div class="flex-1 text-[10px] font-bold uppercase">${item.kodAd}</div>
+                    <div class="text-[9px] font-bold text-blue-500 italic">MS: ${item.gonderen}</div>
+                </div>
+            `).join('');
+        }
+
+        // MAİL GÖNDERİMİ
+        async function approveAndSend(docId) {
+            const settings = JSON.parse(localStorage.getItem('bs_settings') || "{}");
+            if(!settings.sid) return alert("Lütfen önce mail ayarlarını yapın!");
+            const doc = await db.collection("bildirimler").doc(docId).get();
+            const item = doc.data();
+            if(confirm("Bu bildirim merkeze gönderilsin mi?")) {
+                try {
+                    emailjs.init(settings.pk);
+                    await emailjs.send(settings.sid, settings.tid, {
+                        bs_mail: settings.email, urun_adi: item.kodAd, adet: item.adet,
+                        problem: item.problem, uretici: item.uretici, skt: item.skt,
+                        pno: item.pno, img1: item.img1, img2: item.img2
+                    });
+                    await db.collection("bildirimler").doc(docId).update({ durum: "onaylandi" });
+                    alert("Onaylandı ve Mail Gönderildi!");
+                } catch (err) { alert("Hata oluştu! Ayarları kontrol edin."); }
+            }
+        }
+
+        // AYARLAR YÖNETİMİ
+        function saveSettings() {
+            const s = { 
+                email: document.getElementById('bsEmail').value, sid: document.getElementById('bsServiceId').value,
+                tid: document.getElementById('bsTemplateId').value, pk: document.getElementById('bsPublicKey').value
+            };
+            localStorage.setItem('bs_settings', JSON.stringify(s));
+            alert("Ayarlar Kaydedildi!");
+            switchTab('onay');
+        }
+
+        function loadSettings() {
+            const s = JSON.parse(localStorage.getItem('bs_settings') || "{}");
+            if(s.email) {
+                document.getElementById('bsEmail').value = s.email;
+                document.getElementById('bsServiceId').value = s.sid;
+                document.getElementById('bsTemplateId').value = s.tid;
+                document.getElementById('bsPublicKey').value = s.pk;
+            }
+        }
+
+        function switchTab(tab) {
+            document.getElementById('onaySection').classList.toggle('hidden', tab !== 'onay');
+            document.getElementById('arsivSection').classList.toggle('hidden', tab !== 'arsiv');
+            document.getElementById('ayarlarSection').classList.toggle('hidden', tab !== 'ayarlar');
+            document.getElementById('tabOnay').className = tab === 'onay' ? 'flex-1 p-4 text-[10px] uppercase tab-active' : 'flex-1 p-4 text-[10px] uppercase text-slate-400';
+            document.getElementById('tabArsiv').className = tab === 'arsiv' ? 'flex-1 p-4 text-[10px] uppercase tab-active' : 'flex-1 p-4 text-[10px] uppercase text-slate-400';
+        }
+    </script>
+</body>
+</html>
