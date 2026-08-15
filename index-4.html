@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#dc2626">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="taleBIM">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>tale-BIM</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .brand-font { font-family: 'Poppins', sans-serif; }
+        .hidden { display: none; }
+        .img-preview { width: 100%; height: 100px; object-fit: cover; border-radius: 12px; cursor: pointer; border: 1px solid #e2e8f0; transition: transform 0.2s; }
+        .img-preview:hover { transform: scale(1.03); border-color: #dc2626; }
+        #imgModal { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); align-items: center; justify-content: center; flex-direction: column; }
+        #modalImg { max-width: 90%; max-height: 80%; border-radius: 8px; box-shadow: 0 0 20px rgba(255,255,255,0.3); }
+        .close-modal { position: absolute; top: 20px; right: 30px; color: white; font-size: 50px; font-weight: bold; cursor: pointer; }
+        .edit-input { width: 100%; padding: 8px 10px; border: 1.5px solid #ece8e5; border-radius: 8px; font-size: 11px; margin-top: 2px; outline: none; background: #fafaf9; transition: all .15s ease; }
+        .edit-input:focus { border-color: #dc2626; background: #ffffff; box-shadow: 0 0 0 3px rgba(220,38,38,0.08); }
+
+        /* --- Brand UI --- */
+        .login-input {
+            width: 100%; padding: 0.9rem 1rem 0.9rem 2.75rem; border: 1.5px solid #ece8e5;
+            border-radius: 1rem; outline: none; background: #fafaf9; font-size: 0.875rem;
+            color: #1c1c1c; transition: all .15s ease;
+        }
+        .login-input::placeholder { color: #b4aeaa; }
+        .login-input:focus { border-color: #dc2626; background: #ffffff; box-shadow: 0 0 0 4px rgba(220,38,38,0.08); }
+        .login-input-plain { padding-left: 1rem; }
+        .login-icon { position: absolute; left: 0.9rem; top: 50%; transform: translateY(-50%); color: #b4aeaa; pointer-events: none; }
+        .login-input:focus ~ .login-icon, .login-input:focus + .login-icon { color: #dc2626; }
+        .role-btn {
+            padding: 0.75rem 0.5rem; border-radius: 0.9rem; border: 1.5px solid #ece8e5;
+            background: #fafaf9; font-size: 10.5px; font-weight: 800; text-transform: uppercase;
+            letter-spacing: 0.03em; color: #a19a95; cursor: pointer; transition: all .15s ease;
+        }
+        .role-btn-active { background: #dc2626; border-color: #dc2626; color: #ffffff; box-shadow: 0 4px 12px rgba(220,38,38,0.25); }
+
+        .pin-input {
+            width: 100%; padding: 1rem; border: 1.5px solid #ece8e5; border-radius: 1rem;
+            outline: none; background: #fafaf9; text-align: center; font-size: 1.75rem;
+            font-weight: 800; letter-spacing: 0.6em; color: #1c1c1c; transition: all .15s ease;
+        }
+        .pin-input:focus { border-color: #dc2626; background: #ffffff; box-shadow: 0 0 0 4px rgba(220,38,38,0.08); }
+        .pin-shake { animation: pinShake .4s ease; border-color: #dc2626 !important; }
+        @keyframes pinShake {
+            10%, 90% { transform: translateX(-2px); }
+            20%, 80% { transform: translateX(4px); }
+            30%, 50%, 70% { transform: translateX(-8px); }
+            40%, 60% { transform: translateX(8px); }
+        }
+
+        .photo-btn {
+            width: 100%; height: 6.5rem; border: 2px dashed #f5c9c9; border-radius: 1rem;
+            background: #fff8f8; color: #dc2626; font-size: 10px; font-weight: 900;
+            text-transform: uppercase; letter-spacing: 0.04em; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 0.4rem; cursor: pointer; transition: all .15s ease;
+        }
+        .photo-btn:hover { background: #fef0f0; border-color: #dc2626; }
+
+        .badge { font-size: 8px; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; padding: 0.3rem 0.6rem; border-radius: 999px; white-space: nowrap; }
+        .badge-pending { color: #b45309; background: #fffbeb; }
+        .badge-approved { color: #16a34a; background: #f0fdf4; }
+        .badge-deleted { color: #dc2626; background: #fef2f2; }
+
+        .toast-notif {
+            position: fixed; top: 1rem; left: 50%; transform: translateX(-50%) translateY(-120%);
+            background: #1c1c1c; color: white; padding: 0.9rem 1.3rem; border-radius: 1rem;
+            font-size: 12px; font-weight: 700; z-index: 10000; box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+            transition: transform .35s ease; max-width: 90%; display: flex; align-items: center; gap: 0.6rem;
+        }
+        .toast-notif.show { transform: translateX(-50%) translateY(0); }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans text-sm">
+
+    <div id="loginPage" class="min-h-screen flex items-center justify-center p-4 bg-[#faf9f7]">
+        <div class="max-w-sm w-full">
+
+            <div class="flex flex-col items-center mb-8">
+                <div class="flex items-baseline gap-0.5 mb-3 brand-font">
+                    <span class="text-4xl font-light text-red-600 tracking-tight">tale</span>
+                    <span class="text-4xl font-black text-red-600 tracking-tight">BIM</span>
+                </div>
+                <div class="w-9 h-9 rounded-full bg-red-600 flex items-center justify-center mb-3 shadow-lg shadow-red-600/25">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                </div>
+                <p class="text-[10px] font-bold uppercase tracking-[0.25em] text-slate-400">Mağaza Bildirim Sistemi</p>
+            </div>
+
+            <div class="bg-white rounded-3xl shadow-xl shadow-red-900/5 p-7 border border-slate-100 overflow-hidden">
+
+                <div id="msLoginView">
+                    <form id="loginForm" class="space-y-4">
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase tracking-wide text-slate-400 mb-1.5 ml-1">Mağaza Adı</label>
+                            <div class="relative">
+                                <svg class="login-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-5.5A1 1 0 0 1 5.46 3h13.08a1 1 0 0 1 .96 1.5L21 9"/><path d="M4 9v10.5a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/><path d="M9 20.5v-6h6v6"/></svg>
+                                <input type="text" id="magazaAdi" placeholder="Örn. Atatürk CD." required class="login-input">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase tracking-wide text-slate-400 mb-1.5 ml-1">Ad Soyad</label>
+                            <div class="relative">
+                                <svg class="login-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/></svg>
+                                <input type="text" id="fullName" placeholder="Adınız Soyadınız" required class="login-input">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase tracking-wide text-slate-400 mb-1.5 ml-1">Yetki</label>
+                            <input type="hidden" id="role" value="MS">
+                            <div class="grid grid-cols-2 gap-2">
+                                <button type="button" id="roleBtnMS" onclick="selectRole('MS')" class="role-btn role-btn-active">Mağaza (MS/MSY)</button>
+                                <button type="button" id="roleBtnBS" onclick="selectRole('BS')" class="role-btn">Bölge Sorumlusu</button>
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full bg-red-600 text-white p-4 rounded-2xl font-black uppercase tracking-wide hover:bg-red-700 active:scale-[0.98] transition-all shadow-lg shadow-red-600/20 flex items-center justify-center gap-2 mt-2">
+                            Giriş Yap
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                        </button>
+                    </form>
+                </div>
+
+                <div id="bsLoginView" class="hidden text-center">
+                    <button type="button" onclick="backToMsLogin()" class="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-slate-400 hover:text-red-600 transition-colors mb-6">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                        Mağaza Girişine Dön
+                    </button>
+                    <div class="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center mx-auto mb-4">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10.5" width="16" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>
+                    </div>
+                    <h3 class="text-sm font-black uppercase tracking-wide text-slate-800 mb-1 brand-font">Bölge Sorumlusu</h3>
+                    <p class="text-[11px] text-slate-400 mb-6">Devam etmek için şifrenizi girin</p>
+                    <input type="password" id="bsPassword" inputmode="numeric" maxlength="4" autocomplete="off" class="pin-input" placeholder="••••" oninput="handleBsPassword()">
+                    <p id="bsError" class="text-[11px] font-bold text-red-500 mt-3 hidden">Hatalı şifre, tekrar deneyin</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="magazaPage" class="hidden min-h-screen p-4 max-w-lg mx-auto pb-16">
+        <div class="flex items-center justify-between mb-4 px-1">
+            <div>
+                <div class="flex items-baseline gap-0.5 brand-font leading-none">
+                    <span class="text-lg font-light text-red-600 tracking-tight">tale</span><span class="text-lg font-black text-red-600 tracking-tight">BIM</span>
+                </div>
+                <p class="text-[9px] font-bold uppercase tracking-wide text-slate-400 mt-0.5" id="msTitle">Yükleniyor...</p>
+            </div>
+            <button onclick="location.reload()" class="text-[10px] font-bold uppercase text-red-500 border border-red-200 rounded-full px-3 py-1.5 hover:bg-red-50 transition-colors">Çıkış</button>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 mb-4">
+            <button type="button" onclick="switchMsTab('form')" id="msTabForm" class="role-btn role-btn-active">Yeni Talep</button>
+            <button type="button" onclick="switchMsTab('liste')" id="msTabListe" class="role-btn">Taleplerim</button>
+        </div>
+
+        <div id="msFormSection" class="bg-white rounded-3xl shadow-xl shadow-red-900/5 p-6 border border-slate-100 space-y-4">
+            <div id="editBanner" class="hidden bg-amber-50 border border-amber-200 text-amber-700 text-[10px] font-bold uppercase rounded-xl px-3 py-2.5 flex items-center justify-between">
+                <span>Bekleyen talep düzenleniyor</span>
+                <button type="button" onclick="cancelEdit()" class="underline">İptal</button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+                <div id="photoSlot1">
+                    <input type="file" id="file1" accept="image/*" class="hidden" onchange="uploadImage(1)">
+                    <button type="button" onclick="document.getElementById('file1').click()" id="btnFile1" class="photo-btn">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                        FOTO 1 YÜKLE
+                    </button>
+                </div>
+                <div id="photoSlot2">
+                    <input type="file" id="file2" accept="image/*" class="hidden" onchange="uploadImage(2)">
+                    <button type="button" onclick="document.getElementById('file2').click()" id="btnFile2" class="photo-btn">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                        FOTO 2 YÜKLE
+                    </button>
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <input type="text" id="uUrunAdi" placeholder="Ürün Adı *" class="login-input login-input-plain">
+                <input type="text" id="uUrunKodu" placeholder="Ürün Kodu * (yalnızca rakam)" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'')" class="login-input login-input-plain">
+                <div class="grid grid-cols-3 gap-2">
+                    <input type="text" id="uSkt" placeholder="SKT *" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'')" class="login-input login-input-plain text-center">
+                    <input type="text" id="uPno" placeholder="PNO *" class="login-input login-input-plain text-center">
+                    <input type="text" id="uAdet" placeholder="Adet *" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'')" class="login-input login-input-plain text-center font-black text-red-600">
+                </div>
+                <input type="text" id="uUretici" placeholder="Üretici Firma *" class="login-input login-input-plain">
+                <textarea id="uProblem" placeholder="Hata detayı... *" class="login-input login-input-plain h-20 resize-none"></textarea>
+            </div>
+
+            <button id="btnGonder" disabled onclick="saveToFirebase()" class="w-full bg-slate-300 text-white p-4 rounded-2xl font-black uppercase tracking-wide shadow-lg flex items-center justify-center gap-2">
+                <span id="btnGonderText">BS Onayına Gönder</span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+            </button>
+        </div>
+
+        <div id="msListeSection" class="hidden space-y-6">
+            <div>
+                <h3 class="text-[10px] font-black uppercase tracking-wide text-slate-400 mb-2 ml-1">Onay Bekleyenler</h3>
+                <div id="msBekleyenList" class="space-y-2"></div>
+            </div>
+
+            <div class="border-t border-slate-200 pt-5">
+                <div class="flex items-center justify-between mb-2 gap-2 flex-wrap">
+                    <h3 class="text-[10px] font-black uppercase tracking-wide text-slate-400 ml-1">Arşiv</h3>
+                    <div class="flex items-center gap-1.5">
+                        <input type="date" id="msArsivBaslangic" class="login-input login-input-plain text-[10px] py-2 px-2 w-[6.6rem]" onchange="applyMsArchiveFilter()">
+                        <span class="text-slate-300 text-[10px]">—</span>
+                        <input type="date" id="msArsivBitis" class="login-input login-input-plain text-[10px] py-2 px-2 w-[6.6rem]" onchange="applyMsArchiveFilter()">
+                    </div>
+                </div>
+                <div class="relative mb-3">
+                    <svg class="login-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" id="msArsivArama" placeholder="Ürün adı veya tarih ile ara..." class="login-input" oninput="applyMsArchiveFilter()">
+                </div>
+                <div id="msArsivList" class="space-y-2"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="bsPage" class="hidden min-h-screen p-4 max-w-2xl mx-auto pb-16">
+        <div class="flex items-center justify-between mb-4 px-1">
+            <div>
+                <div class="flex items-baseline gap-0.5 brand-font leading-none">
+                    <span class="text-lg font-light text-red-600 tracking-tight">tale</span><span class="text-lg font-black text-red-600 tracking-tight">BIM</span>
+                </div>
+                <p class="text-[9px] font-bold uppercase tracking-wide text-slate-400 mt-0.5">Bölge Sorumlusu Paneli</p>
+            </div>
+            <button onclick="location.reload()" class="text-[10px] font-bold uppercase text-red-500 border border-red-200 rounded-full px-3 py-1.5 hover:bg-red-50 transition-colors">Çıkış</button>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 mb-4">
+            <button type="button" onclick="switchBsTab('talepler')" id="bsTabTalepler" class="role-btn role-btn-active">Talepler</button>
+            <button type="button" onclick="switchBsTab('ayarlar')" id="bsTabAyarlar" class="role-btn">⚙️ Ayarlar</button>
+        </div>
+
+        <div id="bsTaleplerSection" class="space-y-6">
+            <div>
+                <div class="flex items-center justify-between mb-2 ml-1">
+                    <h3 class="text-[10px] font-black uppercase tracking-wide text-slate-400">Onay Bekleyenler</h3>
+                    <span id="bekleyenCount" class="badge badge-pending">0</span>
+                </div>
+                <div id="onaySection" class="space-y-4"></div>
+            </div>
+
+            <div class="border-t border-slate-200 pt-5">
+                <div class="flex items-center justify-between mb-2 gap-2 flex-wrap">
+                    <h3 class="text-[10px] font-black uppercase tracking-wide text-slate-400 ml-1">Arşiv</h3>
+                    <div class="flex items-center gap-1.5">
+                        <input type="date" id="bsArsivBaslangic" class="login-input login-input-plain text-[10px] py-2 px-2 w-[6.6rem]" onchange="applyBsArchiveFilter()">
+                        <span class="text-slate-300 text-[10px]">—</span>
+                        <input type="date" id="bsArsivBitis" class="login-input login-input-plain text-[10px] py-2 px-2 w-[6.6rem]" onchange="applyBsArchiveFilter()">
+                    </div>
+                </div>
+                <div class="relative mb-3">
+                    <svg class="login-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" id="bsArsivArama" placeholder="Mağaza, ürün, isim veya tarih ile ara..." class="login-input" oninput="applyBsArchiveFilter()">
+                </div>
+                <div id="arsivSection" class="space-y-3"></div>
+            </div>
+        </div>
+
+        <div id="bsAyarlarSection" class="hidden bg-white rounded-3xl shadow-xl shadow-red-900/5 p-6 border border-slate-100 space-y-4">
+            <h3 class="font-black uppercase text-[11px] text-slate-700 border-b border-slate-100 pb-3">BS Mail Ayarları</h3>
+            <input type="email" id="bsEmail" placeholder="Mail Adresiniz" class="login-input login-input-plain">
+            <input type="text" id="bsServiceId" placeholder="Service ID" class="login-input login-input-plain text-xs">
+            <input type="text" id="bsTemplateId" placeholder="Template ID" class="login-input login-input-plain text-xs">
+            <input type="text" id="bsPublicKey" placeholder="Public Key" class="login-input login-input-plain text-xs">
+            <button onclick="saveSettings()" class="w-full bg-red-600 text-white p-3.5 rounded-2xl font-black uppercase tracking-wide shadow-lg shadow-red-600/20 hover:bg-red-700 transition-all">Ayarları Kaydet</button>
+        </div>
+    </div>
+
+    <div id="imgModal" onclick="this.style.display='none'">
+        <span class="close-modal">&times;</span>
+        <img id="modalImg" src="">
+    </div>
+
+    <div id="toastNotif" class="toast-notif">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span id="toastNotifText"></span>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyArSP36nTu0RaAECH1GvPCjg3SaLA3Hg50",
+            authDomain: "mail-35b9d.firebaseapp.com",
+            projectId: "mail-35b9d",
+            storageBucket: "mail-35b9d.firebasestorage.app",
+            messagingSenderId: "522534406053",
+            appId: "1:522534406053:web:542774241892c780918a4c",
+            measurementId: "G-3LR972L5Z6"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const storage = firebase.storage();
+
+        let user = {};
+        let uploadedUrls = {1: null, 2: null};
+        let editingDocId = null;
+        let msAllDocs = [];
+        let bsAllDocs = [];
+        let bsInitialLoadDone = false;
+        const BS_PASSWORD = "9553";
+
+        // ---------- LOGIN ----------
+        function selectRole(role) {
+            document.getElementById('role').value = role;
+            document.getElementById('roleBtnMS').className = role === 'MS' ? 'role-btn role-btn-active' : 'role-btn';
+            document.getElementById('roleBtnBS').className = role === 'BS' ? 'role-btn role-btn-active' : 'role-btn';
+            if (role === 'BS') {
+                document.getElementById('msLoginView').classList.add('hidden');
+                document.getElementById('bsLoginView').classList.remove('hidden');
+                const pin = document.getElementById('bsPassword');
+                pin.value = '';
+                document.getElementById('bsError').classList.add('hidden');
+                setTimeout(() => pin.focus(), 50);
+            } else {
+                document.getElementById('bsLoginView').classList.add('hidden');
+                document.getElementById('msLoginView').classList.remove('hidden');
+            }
+        }
+
+        function backToMsLogin() {
+            document.getElementById('bsPassword').value = '';
+            document.getElementById('bsError').classList.add('hidden');
+            selectRole('MS');
+        }
+
+        function handleBsPassword() {
+            const pin = document.getElementById('bsPassword');
+            if (pin.value.length < BS_PASSWORD.length) return;
+            if (pin.value === BS_PASSWORD) {
+                loginAsBs();
+            } else {
+                pin.classList.add('pin-shake');
+                document.getElementById('bsError').classList.remove('hidden');
+                setTimeout(() => {
+                    pin.value = '';
+                    pin.classList.remove('pin-shake');
+                    pin.focus();
+                }, 400);
+            }
+        }
+
+        function loginAsBs() {
+            localStorage.setItem('last_role', 'BS');
+            user = { name: 'Bölge Sorumlusu', magaza: null, role: 'BS' };
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('bsPage').classList.remove('hidden');
+            loadSettings();
+            listenToUpdates();
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+        }
+
+        document.getElementById('loginForm').onsubmit = (e) => {
+            e.preventDefault();
+            const fullName = document.getElementById('fullName').value.trim();
+            const magazaAdi = document.getElementById('magazaAdi').value.trim();
+            if (!magazaAdi) { alert("Lütfen mağaza adını girin!"); return; }
+            localStorage.setItem('last_magaza', magazaAdi);
+            localStorage.setItem('last_name', fullName);
+            localStorage.setItem('last_role', 'MS');
+            user = { name: fullName, magaza: magazaAdi, role: 'MS' };
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('magazaPage').classList.remove('hidden');
+            document.getElementById('msTitle').innerText = `${user.magaza} — ${user.name} (MS, MSY, GT)`;
+            listenToMyRequests();
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const lastMagaza = localStorage.getItem('last_magaza');
+            const lastName = localStorage.getItem('last_name');
+            const lastRole = localStorage.getItem('last_role');
+            if (lastMagaza) document.getElementById('magazaAdi').value = lastMagaza;
+            if (lastName) document.getElementById('fullName').value = lastName;
+            if (lastRole === 'BS') selectRole('BS');
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('sw.js').catch(() => {});
+            }
+        });
+
+        // ---------- GÖRSEL SIKIŞTIRMA ----------
+        function compressImage(file, maxDimension = 1600, quality = 0.72) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        let { width, height } = img;
+                        if (width > maxDimension || height > maxDimension) {
+                            if (width > height) { height = Math.round(height * (maxDimension / width)); width = maxDimension; }
+                            else { width = Math.round(width * (maxDimension / height)); height = maxDimension; }
+                        }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width; canvas.height = height;
+                        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                        canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('Sıkıştırma başarısız')), 'image/jpeg', quality);
+                    };
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // ---------- FOTO YÜKLEME ----------
+        async function uploadImage(id) {
+            const file = document.getElementById(`file${id}`).files[0];
+            if (!file) return;
+            document.getElementById(`photoSlot${id}`).innerHTML = `<div class="photo-btn"><span>Sıkıştırılıyor...</span></div>`;
+            try {
+                const compressed = await compressImage(file);
+                document.getElementById(`photoSlot${id}`).innerHTML = `<div class="photo-btn"><span>Yükleniyor...</span></div>`;
+                const ref = storage.ref(`images/${Date.now()}_foto${id}.jpg`);
+                await ref.put(compressed, { contentType: 'image/jpeg' });
+                const url = await ref.getDownloadURL();
+                uploadedUrls[id] = url;
+                renderPhotoPreview(id, url);
+                checkGonderButton();
+            } catch (error) {
+                alert("Fotoğraf yüklenemedi!");
+                resetPhotoSlot(id);
+            }
+        }
+
+        function renderPhotoPreview(id, url) {
+            document.getElementById(`photoSlot${id}`).innerHTML = `
+                <div class="relative">
+                    <img src="${url}" class="w-full h-[6.5rem] object-cover rounded-xl border border-slate-200 cursor-pointer" onclick="openModal('${url}')">
+                    <button type="button" onclick="removePhoto(${id})" class="absolute -top-2 -right-2 w-6 h-6 bg-red-600 text-white rounded-full flex items-center justify-center shadow-md text-xs font-black leading-none">✕</button>
+                    <div class="absolute bottom-1 left-1 bg-black/60 text-white text-[8px] font-bold uppercase px-2 py-0.5 rounded-full">Foto ${id} ✓</div>
+                </div>`;
+        }
+
+        function resetPhotoSlot(id) {
+            uploadedUrls[id] = null;
+            document.getElementById(`photoSlot${id}`).innerHTML = `
+                <input type="file" id="file${id}" accept="image/*" class="hidden" onchange="uploadImage(${id})">
+                <button type="button" onclick="document.getElementById('file${id}').click()" id="btnFile${id}" class="photo-btn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                    FOTO ${id} YÜKLE
+                </button>`;
+            checkGonderButton();
+        }
+        function removePhoto(id) { resetPhotoSlot(id); }
+
+        function checkGonderButton() {
+            const btn = document.getElementById('btnGonder');
+            if (uploadedUrls[1] && uploadedUrls[2]) {
+                btn.disabled = false;
+                btn.className = "w-full bg-red-600 text-white p-4 rounded-2xl font-black uppercase tracking-wide shadow-lg shadow-red-600/20 flex items-center justify-center gap-2 hover:bg-red-700 transition-all";
+            } else {
+                btn.disabled = true;
+                btn.className = "w-full bg-slate-300 text-white p-4 rounded-2xl font-black uppercase tracking-wide shadow-lg flex items-center justify-center gap-2";
+            }
+        }
+
+        function switchMsTab(tab) {
+            document.getElementById('msFormSection').classList.toggle('hidden', tab !== 'form');
+            document.getElementById('msListeSection').classList.toggle('hidden', tab !== 'liste');
+            document.getElementById('msTabForm').className = tab === 'form' ? 'role-btn role-btn-active' : 'role-btn';
+            document.getElementById('msTabListe').className = tab === 'liste' ? 'role-btn role-btn-active' : 'role-btn';
+        }
+
+        // ---------- MS TALEP GÖNDER / GÜNCELLE ----------
+        function validateMsForm() {
+            const required = {
+                'Ürün Adı': document.getElementById('uUrunAdi').value.trim(),
+                'Ürün Kodu': document.getElementById('uUrunKodu').value.trim(),
+                'SKT': document.getElementById('uSkt').value.trim(),
+                'PNO': document.getElementById('uPno').value.trim(),
+                'Adet': document.getElementById('uAdet').value.trim(),
+                'Üretici Firma': document.getElementById('uUretici').value.trim(),
+                'Hata Detayı': document.getElementById('uProblem').value.trim()
+            };
+            for (const [label, val] of Object.entries(required)) {
+                if (!val) { alert(`Lütfen "${label}" alanını doldurun.`); return false; }
+            }
+            if (!uploadedUrls[1] || !uploadedUrls[2]) { alert("Lütfen her iki fotoğrafı da yükleyin."); return false; }
+            return true;
+        }
+
+        async function saveToFirebase() {
+            if (!validateMsForm()) return;
+            const urunAdi = document.getElementById('uUrunAdi').value.trim();
+            const urunKodu = document.getElementById('uUrunKodu').value.trim();
+            const payload = {
+                kodAd: urunKodu ? `${urunAdi} - ${urunKodu}` : urunAdi,
+                urunAdi, urunKodu,
+                skt: document.getElementById('uSkt').value.trim(),
+                pno: document.getElementById('uPno').value.trim(),
+                uretici: document.getElementById('uUretici').value.trim(),
+                adet: document.getElementById('uAdet').value.trim(),
+                problem: document.getElementById('uProblem').value.trim(),
+                gonderen: user.name,
+                magaza: user.magaza,
+                img1: uploadedUrls[1],
+                img2: uploadedUrls[2],
+                durum: "bekliyor"
+            };
+            try {
+                if (editingDocId) {
+                    await db.collection("bildirimler").doc(editingDocId).update(payload);
+                    alert("Talebiniz güncellendi.");
+                } else {
+                    payload.tarih = firebase.firestore.FieldValue.serverTimestamp();
+                    await db.collection("bildirimler").add(payload);
+                    alert("Talebiniz BS onayına gönderildi!");
+                }
+                resetMsForm();
+                switchMsTab('liste');
+            } catch (error) { alert("Hata! Talep gönderilemedi."); }
+        }
+
+        function resetMsForm() {
+            ['uUrunAdi','uUrunKodu','uSkt','uPno','uAdet','uUretici','uProblem'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
+            resetPhotoSlot(1);
+            resetPhotoSlot(2);
+            editingDocId = null;
+            document.getElementById('editBanner').classList.add('hidden');
+            document.getElementById('btnGonderText').innerText = 'BS Onayına Gönder';
+        }
+
+        function editMyRequest(id) {
+            const item = msAllDocs.find(d => d.id === id);
+            if (!item) return;
+            document.getElementById('uUrunAdi').value = item.urunAdi || '';
+            document.getElementById('uUrunKodu').value = item.urunKodu || '';
+            document.getElementById('uSkt').value = item.skt || '';
+            document.getElementById('uPno').value = item.pno || '';
+            document.getElementById('uAdet').value = item.adet || '';
+            document.getElementById('uUretici').value = item.uretici || '';
+            document.getElementById('uProblem').value = item.problem || '';
+            uploadedUrls[1] = item.img1 || null;
+            uploadedUrls[2] = item.img2 || null;
+            if (item.img1) renderPhotoPreview(1, item.img1); else resetPhotoSlot(1);
+            if (item.img2) renderPhotoPreview(2, item.img2); else resetPhotoSlot(2);
+            checkGonderButton();
+            editingDocId = id;
+            document.getElementById('editBanner').classList.remove('hidden');
+            document.getElementById('btnGonderText').innerText = 'Talebi Güncelle';
+            switchMsTab('form');
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        }
+
+        function cancelEdit() { resetMsForm(); }
+
+        // ---------- MS TALEPLERİM ----------
+        function listenToMyRequests() {
+            db.collection("bildirimler").where("magaza", "==", user.magaza).onSnapshot(snapshot => {
+                msAllDocs = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+                msAllDocs.sort((a, b) => (b.tarih?.seconds || 0) - (a.tarih?.seconds || 0));
+                renderMsBekleyen();
+                applyMsArchiveFilter();
+            });
+        }
+
+        function renderMsBekleyen() {
+            const bekleyen = msAllDocs.filter(d => d.durum === "bekliyor");
+            document.getElementById('msBekleyenList').innerHTML = bekleyen.length ? bekleyen.map(item => `
+                <div class="bg-white rounded-2xl border border-amber-100 p-3 flex items-center gap-3 shadow-sm">
+                    <img src="${item.img1}" class="w-12 h-12 rounded-xl object-cover border border-slate-200 shrink-0 cursor-pointer" onclick="openModal('${item.img1}')">
+                    <div class="flex-1 min-w-0">
+                        <div class="text-[11px] font-black text-slate-700 truncate">${item.urunAdi || item.kodAd || 'İsimsiz Ürün'}</div>
+                        <div class="text-[9px] text-slate-400">${item.adet || '-'} Adet · SKT: ${item.skt || '-'}</div>
+                    </div>
+                    <button onclick="editMyRequest('${item.id}')" class="text-[8px] font-black uppercase text-red-500 border border-red-200 rounded-full px-2.5 py-1.5 hover:bg-red-50 transition-colors shrink-0">Düzenle</button>
+                    <span class="badge badge-pending shrink-0">Bekliyor</span>
+                </div>
+            `).join('') : `<p class="text-[10px] text-slate-400 text-center py-6">Onay bekleyen talebiniz yok.</p>`;
+        }
+
+        function applyMsArchiveFilter() {
+            const start = document.getElementById('msArsivBaslangic').value;
+            const end = document.getElementById('msArsivBitis').value;
+            const term = document.getElementById('msArsivArama').value.trim().toLowerCase();
+            const arsiv = msAllDocs.filter(d => d.durum === "onaylandi" || d.durum === "silindi")
+                .filter(item => matchesDateRange(item, start, end))
+                .filter(item => matchesSearch(item, term));
+            renderMsArsivList(arsiv);
+        }
+
+        function renderMsArsivList(arsiv) {
+            document.getElementById('msArsivList').innerHTML = arsiv.length ? arsiv.map(item => `
+                <div class="bg-white rounded-2xl border border-slate-100 p-3 flex items-center gap-3 shadow-sm ${item.durum === 'silindi' ? 'opacity-60' : ''}">
+                    <img src="${item.img1}" class="w-12 h-12 rounded-xl object-cover border border-slate-200 shrink-0 cursor-pointer" onclick="openModal('${item.img1}')">
+                    <div class="flex-1 min-w-0">
+                        <div class="text-[11px] font-black text-slate-700 truncate">${item.urunAdi || item.kodAd || 'İsimsiz Ürün'}</div>
+                        <div class="text-[9px] text-slate-400">${item.adet || '-'} Adet · SKT: ${item.skt || '-'} · ${formatDate(item)}</div>
+                    </div>
+                    <span class="badge ${item.durum === 'silindi' ? 'badge-deleted' : 'badge-approved'} shrink-0">${item.durum === 'silindi' ? 'Silindi' : 'Onaylandı'}</span>
+                </div>
+            `).join('') : `<p class="text-[10px] text-slate-400 text-center py-6">Kayıt bulunamadı.</p>`;
+        }
+
+        // ---------- ORTAK YARDIMCI FONKSİYONLAR ----------
+        function formatDate(item) {
+            if (!item.tarih || !item.tarih.seconds) return '-';
+            return new Date(item.tarih.seconds * 1000).toLocaleDateString('tr-TR');
+        }
+        function matchesDateRange(item, start, end) {
+            if (!start && !end) return true;
+            if (!item.tarih || !item.tarih.seconds) return true;
+            const itemDate = new Date(item.tarih.seconds * 1000);
+            if (start) { const s = new Date(start); s.setHours(0,0,0,0); if (itemDate < s) return false; }
+            if (end) { const e = new Date(end); e.setHours(23,59,59,999); if (itemDate > e) return false; }
+            return true;
+        }
+        function matchesSearch(item, term) {
+            if (!term) return true;
+            const hay = `${item.magaza || ''} ${item.gonderen || ''} ${item.urunAdi || ''} ${item.kodAd || ''} ${formatDate(item)}`.toLowerCase();
+            return hay.includes(term);
+        }
+
+        function openModal(url) {
+            document.getElementById('modalImg').src = url;
+            document.getElementById('imgModal').style.display = "flex";
+        }
+
+        // ---------- BS TARAFI ----------
+        function switchBsTab(tab) {
+            document.getElementById('bsTaleplerSection').classList.toggle('hidden', tab !== 'talepler');
+            document.getElementById('bsAyarlarSection').classList.toggle('hidden', tab !== 'ayarlar');
+            document.getElementById('bsTabTalepler').className = tab === 'talepler' ? 'role-btn role-btn-active' : 'role-btn';
+            document.getElementById('bsTabAyarlar').className = tab === 'ayarlar' ? 'role-btn role-btn-active' : 'role-btn';
+        }
+
+        function listenToUpdates() {
+            db.collection("bildirimler").onSnapshot(snapshot => {
+                snapshot.docChanges().forEach(change => {
+                    if (change.type === "added" && bsInitialLoadDone) {
+                        const item = change.doc.data();
+                        if (item.durum === "bekliyor") notifyNewRequest(item);
+                    }
+                });
+                bsAllDocs = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+                bsAllDocs.sort((a, b) => (b.tarih?.seconds || 0) - (a.tarih?.seconds || 0));
+                bsInitialLoadDone = true;
+                renderOnayList();
+                applyBsArchiveFilter();
+            });
+        }
+
+        function renderOnayList() {
+            const onayList = bsAllDocs.filter(d => d.durum === "bekliyor");
+            document.getElementById('bekleyenCount').innerText = onayList.length;
+            document.getElementById('onaySection').innerHTML = onayList.length ? onayList.map(item => `
+                <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-3 relative">
+                    <div class="text-red-600 font-black uppercase text-[10px]">Mağaza: ${item.magaza || '—'} &middot; Gönderen: ${item.gonderen}</div>
+                    <div class="space-y-1">
+                        <label class="text-[9px] font-bold text-slate-400 uppercase">Ürün Adı / Kod</label>
+                        <input type="text" value="${item.kodAd || ''}" id="edit-kodAd-${item.id}" class="edit-input font-bold text-slate-700">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <img src="${item.img1}" class="img-preview" onclick="openModal('${item.img1}')">
+                        <img src="${item.img2}" class="img-preview" onclick="openModal('${item.img2}')">
+                    </div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div><label class="text-[9px] font-bold text-slate-400 uppercase">Adet</label>
+                            <input type="text" value="${item.adet || ''}" id="edit-adet-${item.id}" class="edit-input font-bold text-red-600"></div>
+                        <div><label class="text-[9px] font-bold text-slate-400 uppercase">SKT</label>
+                            <input type="text" value="${item.skt || ''}" id="edit-skt-${item.id}" class="edit-input"></div>
+                        <div><label class="text-[9px] font-bold text-slate-400 uppercase">PNO</label>
+                            <input type="text" value="${item.pno || ''}" id="edit-pno-${item.id}" class="edit-input"></div>
+                    </div>
+                    <div><label class="text-[9px] font-bold text-slate-400 uppercase">Sorun Detayı</label>
+                        <textarea id="edit-problem-${item.id}" class="edit-input h-12">${item.problem || ''}</textarea></div>
+                    <div class="flex gap-2">
+                        <button onclick="updateAndSend('${item.id}')" class="flex-[4] bg-green-600 text-white py-4 rounded-xl font-black text-[10px] uppercase shadow-lg hover:bg-green-700 transition-all">Güncelle ve Mail At</button>
+                        <button onclick="deleteRecord('${item.id}')" class="flex-1 bg-red-50 text-red-600 py-4 rounded-xl font-black text-[16px] border border-red-200 shadow-sm flex items-center justify-center hover:bg-red-100 transition-colors">🗑️</button>
+                    </div>
+                </div>
+            `).join('') : `<p class="text-[10px] text-slate-400 text-center py-6">Onay bekleyen talep yok.</p>`;
+        }
+
+        function applyBsArchiveFilter() {
+            const start = document.getElementById('bsArsivBaslangic').value;
+            const end = document.getElementById('bsArsivBitis').value;
+            const term = document.getElementById('bsArsivArama').value.trim().toLowerCase();
+            const arsiv = bsAllDocs.filter(d => d.durum === "onaylandi" || d.durum === "silindi")
+                .filter(item => matchesDateRange(item, start, end))
+                .filter(item => matchesSearch(item, term));
+            renderBsArsivList(arsiv);
+        }
+
+        function renderBsArsivList(arsiv) {
+            document.getElementById('arsivSection').innerHTML = arsiv.length ? arsiv.map(item => `
+                <div class="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-3 relative ${item.durum === 'silindi' ? 'opacity-60' : ''}">
+                    <img src="${item.img1}" class="w-12 h-12 rounded-xl object-cover border border-slate-200 shrink-0 cursor-pointer" onclick="openModal('${item.img1}')">
+                    <div class="flex-1 min-w-0">
+                        <div class="text-[11px] font-black text-slate-700 truncate">${item.urunAdi || item.kodAd || 'İsimsiz Ürün'}</div>
+                        <div class="text-[9px] text-slate-400">SKT: ${item.skt || '-'} · PNO: ${item.pno || '-'} · ${item.adet || '-'} Adet · ${formatDate(item)}</div>
+                        <div class="text-[9px] text-slate-400 mt-0.5"><span class="font-bold text-slate-500">${item.magaza || '—'}</span> — ${item.gonderen || 'Bilinmiyor'}</div>
+                    </div>
+                    <div class="flex flex-col items-end gap-1.5 shrink-0">
+                        <span class="badge ${item.durum === 'silindi' ? 'badge-deleted' : 'badge-approved'}">${item.durum === 'silindi' ? 'Silindi' : 'Onaylandı'}</span>
+                        <button onclick="hardDeleteRecord('${item.id}')" class="w-5 h-5 rounded-full bg-red-50 text-red-500 border border-red-200 flex items-center justify-center text-[10px] font-black hover:bg-red-100 transition-colors">✕</button>
+                    </div>
+                </div>
+            `).join('') : `<p class="text-[10px] text-slate-400 text-center py-6">Kayıt bulunamadı.</p>`;
+        }
+
+        async function updateAndSend(docId) {
+            const settings = JSON.parse(localStorage.getItem('bs_settings') || "{}");
+            if (!settings.sid) return alert("Lütfen önce ayarları yapın!");
+            const updatedData = {
+                kodAd: document.getElementById(`edit-kodAd-${docId}`).value,
+                adet: document.getElementById(`edit-adet-${docId}`).value,
+                skt: document.getElementById(`edit-skt-${docId}`).value,
+                pno: document.getElementById(`edit-pno-${docId}`).value,
+                problem: document.getElementById(`edit-problem-${docId}`).value
+            };
+            if (confirm("Bilgiler güncellenerek mail gönderilsin mi?")) {
+                try {
+                    const doc = await db.collection("bildirimler").doc(docId).get();
+                    const fullItem = { ...doc.data(), ...updatedData };
+                    emailjs.init(settings.pk);
+                    await emailjs.send(settings.sid, settings.tid, {
+                        bs_mail: settings.email, urun_adi: fullItem.kodAd, adet: fullItem.adet,
+                        problem: fullItem.problem, uretici: fullItem.uretici, skt: fullItem.skt,
+                        pno: fullItem.pno, img1: fullItem.img1, img2: fullItem.img2,
+                        magaza: fullItem.magaza || '—', gonderen: fullItem.gonderen || '—'
+                    });
+                    await db.collection("bildirimler").doc(docId).update({ ...updatedData, durum: "onaylandi" });
+                    alert("Güncellendi ve Gönderildi!");
+                } catch (err) { alert("Hata! Ayarları kontrol edin."); }
+            }
+        }
+
+        async function deleteRecord(id) {
+            if (confirm("Bu talebi silmek istediğinize emin misiniz? Talep, 'Silindi' etiketiyle arşive taşınacak.")) {
+                try {
+                    await db.collection("bildirimler").doc(id).update({ durum: "silindi", silinmeTarihi: firebase.firestore.FieldValue.serverTimestamp() });
+                    alert("Talep silindi olarak işaretlendi ve arşive taşındı.");
+                } catch (err) { alert("Silme hatası!"); }
+            }
+        }
+
+        async function hardDeleteRecord(id) {
+            if (confirm("Bu kaydı kalıcı olarak silmek istiyorsunuz. Bu işlem geri alınamaz, devam edilsin mi?")) {
+                try {
+                    const doc = await db.collection("bildirimler").doc(id).get();
+                    const data = doc.data();
+                    [data?.img1, data?.img2].forEach(url => {
+                        if (url) { try { storage.refFromURL(url).delete().catch(() => {}); } catch(e) {} }
+                    });
+                    await db.collection("bildirimler").doc(id).delete();
+                    alert("Kayıt kalıcı olarak silindi.");
+                } catch (err) { alert("Silme hatası!"); }
+            }
+        }
+
+        function saveSettings() {
+            const s = {
+                email: document.getElementById('bsEmail').value, sid: document.getElementById('bsServiceId').value,
+                tid: document.getElementById('bsTemplateId').value, pk: document.getElementById('bsPublicKey').value
+            };
+            localStorage.setItem('bs_settings', JSON.stringify(s));
+            alert("Ayarlar Kaydedildi!");
+            switchBsTab('talepler');
+        }
+
+        function loadSettings() {
+            const s = JSON.parse(localStorage.getItem('bs_settings') || "{}");
+            if (s.email) {
+                document.getElementById('bsEmail').value = s.email;
+                document.getElementById('bsServiceId').value = s.sid;
+                document.getElementById('bsTemplateId').value = s.tid;
+                document.getElementById('bsPublicKey').value = s.pk;
+            }
+        }
+
+        // ---------- YENİ TALEP BİLDİRİMİ ----------
+        function notifyNewRequest(item) {
+            const label = item.urunAdi || item.kodAd || 'İsimsiz Ürün';
+            showToast(`Yeni Talep Mevcut - ${label}`);
+            playBeep();
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification('Yeni Talep Mevcut', { body: `${label} — ${item.magaza || ''}` });
+            }
+        }
+
+        function showToast(text) {
+            const toast = document.getElementById('toastNotif');
+            document.getElementById('toastNotifText').innerText = text;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 4000);
+        }
+
+        function playBeep() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.frequency.value = 880;
+                gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                osc.start();
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+                osc.stop(ctx.currentTime + 0.35);
+            } catch (e) {}
+        }
+    </script>
+</body>
+</html>

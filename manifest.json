@@ -1,0 +1,15 @@
+{
+  "name": "taleBIM - Mağaza Bildirim Sistemi",
+  "short_name": "taleBIM",
+  "description": "Mağazalardan gelen problemli ürün taleplerini yönetme sistemi",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#faf9f7",
+  "theme_color": "#dc2626",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
